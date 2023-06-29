@@ -27,7 +27,7 @@ jobs:
     name: terraform
     runs-on: ubuntu-latest
     steps:
-#  - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
       - uses: terraform-linters/setup-tflint@v3
         name: Setup TFLint
@@ -41,7 +41,7 @@ jobs:
     name: validate
     runs-on: ubuntu-latest
     steps:
-      #     - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
       - name: setup terraform
         uses: hashicorp/setup-terraform@v2
@@ -62,7 +62,7 @@ jobs:
     name: fmt
     runs-on: ubuntu-latest
     steps:
-      #     - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
       - name: setup terraform
         uses: hashicorp/setup-terraform@v2
