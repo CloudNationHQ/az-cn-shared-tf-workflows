@@ -36,3 +36,21 @@ jobs:
 
       - name: Run TFLint
         run: tflint
+
+  validate-fmt:
+    name: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: setup terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: false
+
+      - name: terraform validate
+        run: terraform validate
+
+      - name: terraform fmt
+        run: terraform fmt -check -recursive
+        continue-on-error: false
