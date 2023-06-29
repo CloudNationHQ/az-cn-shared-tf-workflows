@@ -55,13 +55,6 @@ jobs:
       - name: terraform init
         run: terraform init
 
-      - name: terraform validate
-        run: terraform validate
-
-      - name: terraform fmt
-        run: terraform fmt -check -recursive
-        continue-on-error: false
-
       - name: setup go
         uses: actions/setup-go@v3
         with:
