@@ -35,4 +35,4 @@ jobs:
           tflint_version: v0.47.0
 
       - name: Run TFLint
-        run: tflint -f compact
+        run: tflint
