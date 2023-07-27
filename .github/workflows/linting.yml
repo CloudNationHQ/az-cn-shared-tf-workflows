@@ -58,17 +58,33 @@ jobs:
         run: terraform fmt -check -recursive
         continue-on-error: false
 
-  fmt:
-    name: fmt
+  tests:
+    name: tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-
-      - name: setup terraform
-        uses: hashicorp/setup-terraform@v2
+      - name: check out called repo
+        uses: actions/checkout@v2
         with:
-          terraform_wrapper: false
+          repository: aztfmods/workflows-shared
+          path: global
 
-      - name: terraform fmt
-        run: terraform fmt -check -recursive
-        continue-on-error: false
+      - name: setup go
+        uses: actions/setup-go@v3
+        with:
+          check-latest: true
+
+      - name: fetch go modules
+        working-directory: global/tests
+        run: go mod download
+
+      - name: check out caller repo
+        uses: actions/checkout@v2
+        with:
+          repository: ${{ github.repository }}
+          path: caller
+
+      - name: run global tests
+        working-directory: global/tests
+        run: go test -v ./...
+        env:
+          README_PATH: "${{ github.workspace }}/caller/README.md"
