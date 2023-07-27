@@ -12,7 +12,16 @@ import (
 	"mvdan.cc/xurls/v2"
 )
 
-func TestURLs(t *testing.T) {
+func TestMarkdown(t *testing.T) {
+    t.Run("URLs", validateURLs)
+    t.Run("Headers", validateReadmeHeaders)
+    t.Run("NotEmpty", validateReadmeNotEmpty)
+    t.Run("ResourceTableHeaders", validateResourceTableHeaders)
+    t.Run("InputsTableHeaders", validateInputsTableHeaders)
+    t.Run("OutputsTableHeaders", validateOutputsTableHeaders)
+}
+
+func validateURLs(t *testing.T) {
 	readmePath := os.Getenv("README_PATH")
 	data, err := os.ReadFile(readmePath)
 	if err != nil {
@@ -56,7 +65,7 @@ func TestURLs(t *testing.T) {
 	wg.Wait()
 }
 
-func TestReadmeHeaders(t *testing.T) {
+func validateReadmeHeaders(t *testing.T) {
 	readmePath := os.Getenv("README_PATH")
 	data, err := os.ReadFile(readmePath)
 	if err != nil {
@@ -64,19 +73,30 @@ func TestReadmeHeaders(t *testing.T) {
 	}
 
 	contents := string(data)
-	requiredHeaders := []string{"## Goals", "## Features"}
 
-	for _, header := range requiredHeaders {
-		match, _ := regexp.MatchString("(?m)^"+regexp.QuoteMeta(header)+"$", contents)
-		if !match {
-			t.Errorf("Failed: README.md does not contain required header: %s", header)
+	requiredHeaders := map[string]int{
+		"## Goals":     1,
+		"## Resources": 1,
+		"## Inputs":    1,
+		"## Outputs":   1,
+		"## Features":  1,
+		"## Testing":   1,
+		"## Authors":   1,
+		"## License":   1,
+		"## Usage":     2,
+	}
+
+	for header, minCount := range requiredHeaders {
+		matches := regexp.MustCompile("(?m)^"+regexp.QuoteMeta(header)).FindAllString(contents, -1)
+		if len(matches) < minCount {
+			t.Errorf("Failed: README.md does not contain required header '%s' at least %d times", header, minCount)
 		} else {
-			t.Logf("Success: README.md contains required header: %s", header)
+			t.Logf("Success: README.md contains required header '%s' at least %d times", header, minCount)
 		}
 	}
 }
 
-func TestReadmeNotEmpty(t *testing.T) {
+func validateReadmeNotEmpty(t *testing.T) {
 	readmePath := os.Getenv("README_PATH")
 
 	data, err := os.ReadFile(readmePath)
@@ -90,5 +110,57 @@ func TestReadmeNotEmpty(t *testing.T) {
 		t.Errorf("Failed: README.md is empty.")
 	} else {
 		t.Log("Success: README.md is not empty.")
+	}
+}
+
+func validateResourceTableHeaders(t *testing.T) {
+	markdownTableHeaders(t, "Resources", []string{"Name", "Type"})
+}
+
+func validateInputsTableHeaders(t *testing.T) {
+	markdownTableHeaders(t, "Inputs", []string{"Name", "Description", "Type", "Required"})
+}
+
+func validateOutputsTableHeaders(t *testing.T) {
+	markdownTableHeaders(t, "Outputs", []string{"Name", "Description"})
+}
+
+func markdownTableHeaders(t *testing.T, header string, columns []string) {
+	readmePath := os.Getenv("README_PATH")
+	data, err := os.ReadFile(readmePath)
+	if err != nil {
+		t.Fatalf("Failed to load markdown file: %v", err)
+	}
+
+	contents := string(data)
+	requiredHeaders := []string{"## " + header}
+
+	for _, requiredHeader := range requiredHeaders {
+		headerPattern := regexp.MustCompile("(?m)^" + regexp.QuoteMeta(requiredHeader) + "\\s*$")
+		headerLoc := headerPattern.FindStringIndex(contents)
+		if headerLoc == nil {
+			t.Errorf("Failed: README.md does not contain required header: %s", requiredHeader)
+		} else {
+			t.Logf("Success: README.md contains required header: %s", requiredHeader)
+		}
+
+		// Look for a table immediately after the header
+		tablePattern := regexp.MustCompile(`(?s)` + regexp.QuoteMeta(requiredHeader) + `(\s*\|.*\|)+\s*`)
+		tableLoc := tablePattern.FindStringIndex(contents)
+		if tableLoc == nil {
+			t.Errorf("Failed: README.md does not contain a table immediately after the header: %s", requiredHeader)
+		} else {
+			t.Logf("Success: README.md contains a table immediately after the header: %s", requiredHeader)
+		}
+
+		// Check the table headers
+		columnHeaders := strings.Join(columns, " \\| ")
+		headerRowPattern := regexp.MustCompile(`(?m)\| ` + columnHeaders + ` \|`)
+		headerRowLoc := headerRowPattern.FindStringIndex(contents[tableLoc[0]:tableLoc[1]])
+		if headerRowLoc == nil {
+			t.Errorf("Failed: README.md does not contain the correct headers in the table after: %s", requiredHeader)
+		} else {
+			t.Logf("Success: README.md contains the correct headers in the table after: %s", requiredHeader)
+		}
 	}
 }
