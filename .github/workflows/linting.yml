@@ -63,10 +63,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: check out called repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: aztfmods/workflows-shared
-          path: global
+          path: called
 
       - name: setup go
         uses: actions/setup-go@v3
@@ -74,17 +74,18 @@ jobs:
           check-latest: true
 
       - name: fetch go modules
-        working-directory: global/tests
+        working-directory: called/tests
         run: go mod download
 
       - name: check out caller repo
         uses: actions/checkout@v2
         with:
           repository: ${{ github.repository }}
+          ref: ${{ github.head_ref }}
           path: caller
 
       - name: run global tests
-        working-directory: global/tests
+        working-directory: called/tests
         run: go test -v ./...
         env:
           README_PATH: "${{ github.workspace }}/caller/README.md"
