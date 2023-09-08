@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   validate-pr-title:
-    name: conventional commits
+    name: pr commit
     runs-on: ubuntu-latest
     steps:
       - uses: amannn/action-semantic-pull-request@v5
@@ -23,8 +23,20 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  branch-naming-rules:
+    name: branch name prefix
+    runs-on: ubuntu-latest
+    steps:
+      - uses: deepakputhraya/action-branch-name@master
+        with:
+          regex: '^(feat|fix)\/[a-z]+$'
+          allowed_prefixes: 'feat,fix'
+          ignore: main,develop
+          min_length: 5
+          max_length: 20
+
   run-tflint:
-    name: terraform
+    name: linting
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -38,7 +50,7 @@ jobs:
         run: tflint
 
   validate:
-    name: validate
+    name: deployment
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -59,7 +71,7 @@ jobs:
         continue-on-error: false
 
   tests:
-    name: tests
+    name: global tests
     runs-on: ubuntu-latest
     steps:
       - name: check out called repo
