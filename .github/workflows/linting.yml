@@ -49,12 +49,6 @@ jobs:
       - name: Run TFLint
         run: tflint
 
-  validate:
-    name: deployment
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-
       - name: setup terraform
         uses: hashicorp/setup-terraform@v2
         with:
