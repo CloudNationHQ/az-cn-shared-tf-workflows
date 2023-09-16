@@ -33,7 +33,7 @@ jobs:
           allowed_prefixes: 'feat,fix'
           ignore: main,develop
           min_length: 3
-          max_length: 20
+          max_length: 30
 
   run-tflint:
     name: linting
