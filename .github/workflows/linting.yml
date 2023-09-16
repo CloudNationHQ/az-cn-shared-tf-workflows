@@ -32,7 +32,7 @@ jobs:
           regex: '^(feat|fix)\/[a-z]+$'
           allowed_prefixes: 'feat,fix'
           ignore: main,develop
-          min_length: 5
+          min_length: 3
           max_length: 20
 
   run-tflint:
