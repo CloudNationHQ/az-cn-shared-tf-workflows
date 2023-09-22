@@ -63,5 +63,5 @@ jobs:
           if [ "${{ inputs.test }}" = "test_extended" ]; then
             make ${{ inputs.test }}
           else
-            make test USECASE=${{ inputs.test }}
+            make test TF_PATH=${{ inputs.test }}
           fi
