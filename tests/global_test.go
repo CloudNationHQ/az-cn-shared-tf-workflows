@@ -1,8 +1,9 @@
 package main
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
-	"net/url"
 	"os"
 	"regexp"
 	"strings"
@@ -11,6 +12,15 @@ import (
 
 	"mvdan.cc/xurls/v2"
 )
+
+type ErrorResponse struct {
+	Errors []ErrorDetail `json:"errors"`
+}
+
+type ErrorDetail struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
 
 func TestMarkdown(t *testing.T) {
     t.Run("URLs", validateURLs)
@@ -21,48 +31,71 @@ func TestMarkdown(t *testing.T) {
     t.Run("OutputsTableHeaders", validateOutputsTableHeaders)
 }
 
-func validateURLs(t *testing.T) {
-	readmePath := os.Getenv("README_PATH")
-	data, err := os.ReadFile(readmePath)
+func checkRegistryURL(url string) (bool, error) {
+	resp, err := http.Get(url)
 	if err != nil {
-		t.Fatalf("Failed to load markdown file: %v", err)
+		return false, err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return false, err
 	}
 
-	rxStrict := xurls.Strict()
-	urls := rxStrict.FindAllString(string(data), -1)
-
-	var wg sync.WaitGroup
-	for _, u := range urls {
-		// Skip Terraform Registry URLs because of status 200 on non-existing URLs.
-		if strings.Contains(u, "registry.terraform.io/providers/") {
-			continue
-		}
-
-		// Parse the URL before making a request
-		_, err := url.Parse(u)
-		if err != nil {
-			continue
-		}
-
-		wg.Add(1)
-		go func(url string) {
-			defer wg.Done()
-
-			resp, err := http.Get(url)
-			if err != nil {
-				t.Errorf("Failed: URL: %s, Error: %v", url, err)
-				return
-			}
-			defer resp.Body.Close()
-
-			if resp.StatusCode != http.StatusOK {
-				t.Errorf("Failed: URL: %s, Status code: %d", url, resp.StatusCode)
-			} else {
-				t.Logf("Success: URL: %s, Status code: %d", url, resp.StatusCode)
-			}
-		}(u)
+	var errorResponse ErrorResponse
+	err = json.Unmarshal(body, &errorResponse)
+	if err != nil {
+		return false, err
 	}
-	wg.Wait()
+
+	for _, errorDetail := range errorResponse.Errors {
+		if errorDetail.Code == "NAME_UNKNOWN" {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
+func validateURLs(t *testing.T) {
+    readmePath := os.Getenv("README_PATH")
+    data, err := os.ReadFile(readmePath)
+    if err != nil {
+        t.Fatalf("Failed to load markdown file: %v", err)
+    }
+
+    rxStrict := xurls.Strict()
+    urls := rxStrict.FindAllString(string(data), -1)
+
+    var wg sync.WaitGroup
+    for _, u := range urls {
+        wg.Add(1)
+        go func(link string) {
+            defer wg.Done()
+
+            if strings.Contains(link, "registry.terraform.io/providers/") {
+                isValid, err := checkRegistryURL(link)
+                if err != nil || !isValid {
+                    t.Errorf("Failed: Invalid registry URL: %s", link)
+                    return
+                }
+            } else {
+                resp, err := http.Get(link)
+                if err != nil {
+                    t.Errorf("Failed: URL: %s, Error: %v", link, err)
+                    return
+                }
+                defer resp.Body.Close()
+
+                if resp.StatusCode != http.StatusOK {
+                    t.Errorf("Failed: URL: %s, Status code: %d", link, resp.StatusCode)
+                } else {
+                    t.Logf("Success: URL: %s, Status code: %d", link, resp.StatusCode)
+                }
+            }
+        }(u)
+    }
+    wg.Wait()
 }
 
 func validateReadmeHeaders(t *testing.T) {
