@@ -78,6 +78,8 @@ func validateURLs(t *testing.T) {
                 if err != nil || !isValid {
                     t.Errorf("Failed: Invalid registry URL: %s", link)
                     return
+                } else {
+                    t.Logf("Success: Valid registry URL: %s", link)  // Added this line for logging
                 }
             } else {
                 resp, err := http.Get(link)
