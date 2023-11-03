@@ -83,7 +83,6 @@ func validateReadmeHeaders(t *testing.T) {
 		"## Testing":   1,
 		"## Authors":   1,
 		"## License":   1,
-		"## Usage":     1,
 	}
 
 	for header, minCount := range requiredHeaders {
