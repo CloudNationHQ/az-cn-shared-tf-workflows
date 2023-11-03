@@ -4,6 +4,7 @@ on:
   workflow_call:
     inputs:
       default_branch:
+        type: string
         description: 'The default branch for the release'
         required: false
         default: 'main'
